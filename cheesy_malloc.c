@@ -6,8 +6,9 @@
 #include <string.h>
 #include <stdio.h>
 
-// macOS
+#ifdef PLATFORM_DARWIN
 #include <malloc/malloc.h>
+#endif
 
 static pthread_mutex_t malloc_lock = PTHREAD_MUTEX_INITIALIZER;
 static uint8_t mem[1024 * 1024 * 1024];
@@ -115,13 +116,7 @@ void *reallocf(void *ptr, size_t size)
   return out;
 }
 
-void *malloc_zone_calloc(malloc_zone_t *zone, size_t nmemb, size_t size)
-{
-  void *ptr = calloc_internal(nmemb, size);
-  safe_printf("malloc_zone_calloc(%p, %zu, %zu) -> %p\n",
-      zone, nmemb, size, ptr);
-  return ptr;
-}
+#ifdef PLATFORM_DARWIN
 
 void *malloc_zone_malloc(malloc_zone_t *zone, size_t size)
 {
@@ -131,7 +126,17 @@ void *malloc_zone_malloc(malloc_zone_t *zone, size_t size)
   return ptr;
 }
 
+void *malloc_zone_calloc(malloc_zone_t *zone, size_t nmemb, size_t size)
+{
+  void *ptr = calloc_internal(nmemb, size);
+  safe_printf("malloc_zone_calloc(%p, %zu, %zu) -> %p\n",
+      zone, nmemb, size, ptr);
+  return ptr;
+}
+
 void malloc_zone_free(malloc_zone_t *zone, void *ptr)
 {
   safe_printf("malloc_zone_free(%p, %p)\n", zone, ptr);
 }
+
+#endif

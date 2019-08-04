@@ -3,7 +3,7 @@
 import argparse
 import os
 
-cflags  = "-g -Wall -Wextra -Wpedantic -Werror "
+cflags  = "-g -Wall -Wextra -Wpedantic -Werror -fPIC "
 cflags += "-Wno-gnu-zero-variadic-macro-arguments "
 cflags += "-Wno-unused-parameter "
 cflags += "-std=c11 -fcolor-diagnostics"

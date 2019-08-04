@@ -109,7 +109,7 @@ class BuildEnv:
       fw_part = ""
       if "frameworks" in props:
         fws = props["frameworks"]
-        fw_part += "\n  ldflags ="
+        fw_part += "\n  ldflags = $ldflags"
         fw_part += "".join(map(lambda x: " -framework %s" % x, fws))
 
       ext = ".exe" if self.IsWindows() else ""

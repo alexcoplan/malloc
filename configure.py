@@ -3,14 +3,16 @@
 import argparse
 import os
 
-cflags  = "-g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments"
+cflags  = "-g -Wall -Wextra -Wpedantic -Werror "
+cflags += "-Wno-gnu-zero-variadic-macro-arguments "
+cflags += "-Wno-unused-parameter "
 cflags += "-std=c11 -fcolor-diagnostics"
 
 ninja_vars = {
   "builddir" : "build",
-  "cc" : "clang",
-  "cflags" : "-g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -std=c11 -fcolor-diagnostics",
-  "ldflags" : "-L$builddir",
+  "cc"       : "clang",
+  "cflags"   : cflags,
+  "ldflags"  : "-L$builddir",
 }
 
 ninjafile_base = """
@@ -23,6 +25,10 @@ rule cc
 rule link
   command = $cc $ldflags -o $out $in
   description = LINK $out
+
+rule shlib
+  command = $cc -shared -o $out $in
+  description = SHLIB $out
 
 """
 
@@ -49,18 +55,27 @@ class BuildEnv:
     self.vars = vars
     self.progs = []
     self.objs = []
+    self.shared_libs = []
 
   def IsWindows(self):
       return os.name == 'nt'
 
-  def Program(self, name, src):
+  def src_helper(self, src):
     objects = []
     for f in src:
       obj_name = strip_c_ext(f)
       objects.append(obj_name)
       if obj_name not in self.objs:
         self.objs.append(obj_name)
+    return objects
+
+  def Program(self, name, src):
+    objects = self.src_helper(src)
     self.progs.append((name, objects))
+
+  def SharedLibrary(self, name, src):
+    objects = self.src_helper(src)
+    self.shared_libs.append((name, objects))
   
   def Test(self, name, src):
     return self.Program("test/%s" % name, src + ["test.c"])
@@ -83,6 +98,11 @@ class BuildEnv:
       ext = ".exe" if self.IsWindows() else ""
       fp.write("build $builddir/%s%s: link %s\n" % (name, ext, obj_line))
 
+    fp.write("\n# shared libraries\n")
+    for (name, objs) in self.shared_libs:
+      obj_line = " ".join(map(lambda x: "$builddir/%s.o" % x, objs))
+      fp.write("build $builddir/%s: shlib %s\n" % (name, obj_line))
+
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -101,6 +121,8 @@ if __name__ == '__main__':
 
   env = BuildEnv(ninja_vars)
   env.Test('test_lin_alloc', ['test_lin_alloc.c', 'lin_alloc.c'])
+  env.SharedLibrary('cheesy_malloc.so',
+      ['malloc_linear.c', 'lin_alloc.c', 'safe_printf.c'])
 
   with open("build.ninja", "w") as f:
     env.write_ninja(f)

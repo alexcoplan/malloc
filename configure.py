@@ -2,11 +2,16 @@
 
 import argparse
 import os
+import platform
 
 cflags  = "-g -Wall -Wextra -Wpedantic -Werror -fPIC "
 cflags += "-Wno-gnu-zero-variadic-macro-arguments "
 cflags += "-Wno-unused-parameter "
-cflags += "-std=c11 -fcolor-diagnostics"
+cflags += "-std=c11 -fcolor-diagnostics "
+
+plat = platform.system()
+if plat == 'Darwin':
+  cflags += '-DPLATFORM_DARWIN '
 
 ninja_vars = {
   "builddir" : "build",
@@ -44,17 +49,18 @@ def get_san_flags(desc):
       flags += " -fno-sanitize-recover=undefined"
   return flags
 
-def strip_c_ext(c_file):
-  parts = c_file.split(".")
-  if len(parts) != 2 or parts[1] != "c":
+def strip_src_ext(src_file):
+  parts = src_file.split(".")
+  if len(parts) != 2 or parts[1] not in ["c","m"]:
     return None
-  return parts[0]
+  return parts[0], parts[1]
 
 class BuildEnv:
   def __init__(self, vars):
     self.vars = vars
     self.progs = []
     self.objs = []
+    self.obj_ext_map = {}
     self.shared_libs = []
 
   def IsWindows(self):
@@ -63,15 +69,16 @@ class BuildEnv:
   def src_helper(self, src):
     objects = []
     for f in src:
-      obj_name = strip_c_ext(f)
+      obj_name, ext = strip_src_ext(f)
       objects.append(obj_name)
       if obj_name not in self.objs:
         self.objs.append(obj_name)
+        self.obj_ext_map[obj_name] = ext
     return objects
 
-  def Program(self, name, src):
+  def Program(self, name, src, **kwargs):
     objects = self.src_helper(src)
-    self.progs.append((name, objects))
+    self.progs.append((name, objects, kwargs))
 
   def SharedLibrary(self, name, src):
     objects = self.src_helper(src)
@@ -90,13 +97,20 @@ class BuildEnv:
 
     fp.write("# objects\n")
     for obj in self.objs:
-      fp.write("build $builddir/%s.o: cc %s.c\n" % (obj, obj))
+      ext = self.obj_ext_map[obj]
+      fp.write("build $builddir/%s.o: cc %s.%s\n" % (obj, obj, ext))
 
     fp.write("\n# executables\n")
-    for (name, objs) in self.progs:
+    for (name, objs, props) in self.progs:
       obj_line = " ".join(map(lambda x: "$builddir/%s.o" % x, objs))
+      fw_part = ""
+      if "frameworks" in props:
+        fws = props["frameworks"]
+        fw_part += "\n  ldflags ="
+        fw_part += "".join(map(lambda x: " -framework %s" % x, fws))
+
       ext = ".exe" if self.IsWindows() else ""
-      fp.write("build $builddir/%s%s: link %s\n" % (name, ext, obj_line))
+      fp.write("build $builddir/%s%s: link %s %s\n" % (name, ext, obj_line, fw_part))
 
     fp.write("\n# shared libraries\n")
     for (name, objs) in self.shared_libs:
@@ -126,6 +140,7 @@ if __name__ == '__main__':
       ['test_better_lin_alloc.c', 'better_lin_alloc.c', 'safe_printf.c'])
   env.SharedLibrary('cheesy_malloc.so',
       ['cheesy_malloc.c', 'better_lin_alloc.c', 'safe_printf.c'])
+  env.Program('objc_test', ['objc_test.m'], frameworks=['Foundation'])
 
   with open("build.ninja", "w") as f:
     env.write_ninja(f)

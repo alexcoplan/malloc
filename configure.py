@@ -122,8 +122,10 @@ if __name__ == '__main__':
   env = BuildEnv(ninja_vars)
   env.Test('test_basic_lin_alloc',
       ['test_basic_lin_alloc.c', 'basic_lin_alloc.c'])
+  env.Test('test_better_lin_alloc',
+      ['test_better_lin_alloc.c', 'better_lin_alloc.c', 'safe_printf.c'])
   env.SharedLibrary('cheesy_malloc.so',
-      ['cheesy_malloc.c', 'basic_lin_alloc.c', 'safe_printf.c'])
+      ['cheesy_malloc.c', 'better_lin_alloc.c', 'safe_printf.c'])
 
   with open("build.ninja", "w") as f:
     env.write_ninja(f)

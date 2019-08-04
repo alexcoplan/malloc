@@ -15,7 +15,7 @@ static uint8_t mem[16 * 1024 * 1024];
 static bool done_lin_init = false;
 static basic_lin_alloc_t la;
 
-static void *alloc_internal(size_t size, size_t align)
+static void *alloc_internal_align(size_t size, size_t align)
 {
   pthread_mutex_lock(&malloc_lock);
 
@@ -30,16 +30,21 @@ static void *alloc_internal(size_t size, size_t align)
   return out;
 }
 
+static void *alloc_internal(size_t size)
+{
+  return alloc_internal_align(size, 8);
+}
+
 void *malloc(size_t size)
 {
-  void *out = alloc_internal(size, 8);
+  void *out = alloc_internal(size);
   safe_printf("malloc(%zu) -> %p\n", size, out);
   return out;
 }
 
 void *valloc(size_t size)
 {
-  void *out = alloc_internal(size, 4 * 1024);
+  void *out = alloc_internal_align(size, 4 * 1024);
   safe_printf("valloc(%zu) -> %p\n", size, out);
   return out;
 }
@@ -53,7 +58,7 @@ void free(void *ptr)
 void *calloc_internal(size_t nmemb, size_t size)
 {
   const size_t total = nmemb * size;
-  void *ptr = alloc_internal(total, 8);
+  void *ptr = alloc_internal(total);
   memset(ptr, 0, total);
   return ptr;
 }
@@ -67,7 +72,7 @@ void *calloc(size_t nmemb, size_t size)
 
 int posix_memalign(void **out, size_t align, size_t size)
 {
-  void *ptr = alloc_internal(size, align);
+  void *ptr = alloc_internal(size);
   safe_printf("posix_memalign(align=%zu, size=%zu) -> %p\n",
       align, size, ptr);
 
@@ -83,7 +88,7 @@ void *realloc(void *ptr, size_t size)
 {
   void *out = NULL;
   if (!ptr) {
-    out = alloc_internal(size, 8);
+    out = alloc_internal(size);
   }
 
   safe_printf("realloc(%p, %zu) -> %p\n", ptr, size, out);
@@ -106,7 +111,7 @@ void *malloc_zone_calloc(malloc_zone_t *zone, size_t nmemb, size_t size)
 
 void *malloc_zone_malloc(malloc_zone_t *zone, size_t size)
 {
-  void *ptr = alloc_internal(size, 8);
+  void *ptr = alloc_internal(size);
   safe_printf("malloc_zone_malloc(%p, %zu) -> %p\n",
       zone, size, ptr);
   return ptr;

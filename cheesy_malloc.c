@@ -47,7 +47,7 @@ static void *realloc_internal(void *orig, size_t size, size_t align)
 
 static void *alloc_internal(size_t size)
 {
-  return alloc_internal_align(size, 8);
+  return alloc_internal_align(size, 16);
 }
 
 void *malloc(size_t size)
@@ -103,14 +103,14 @@ int posix_memalign(void **out, size_t align, size_t size)
 
 void *realloc(void *ptr, size_t size)
 {
-  void *out = realloc_internal(ptr, size, 8);
+  void *out = realloc_internal(ptr, size, 16);
   safe_printf("realloc(%p, %zu) -> %p\n", ptr, size, out);
   return out;
 }
 
 void *reallocf(void *ptr, size_t size)
 {
-  void *out = realloc_internal(ptr, size, 8);
+  void *out = realloc_internal(ptr, size, 16);
   safe_printf("reallocf(%p, %zu) -> %p\n", ptr, size, out);
   return out;
 }
@@ -129,4 +129,9 @@ void *malloc_zone_malloc(malloc_zone_t *zone, size_t size)
   safe_printf("malloc_zone_malloc(%p, %zu) -> %p\n",
       zone, size, ptr);
   return ptr;
+}
+
+void malloc_zone_free(malloc_zone_t *zone, void *ptr)
+{
+  safe_printf("malloc_zone_free(%p, %p)\n", zone, ptr);
 }

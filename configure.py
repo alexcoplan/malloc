@@ -27,7 +27,7 @@ rule link
   description = LINK $out
 
 rule shlib
-  command = $cc -shared -o $out $in
+  command = $cc $ldflags -shared -o $out $in
   description = SHLIB $out
 
 """
@@ -120,9 +120,10 @@ if __name__ == '__main__':
         "Invalid config %s" % args.config
 
   env = BuildEnv(ninja_vars)
-  env.Test('test_lin_alloc', ['test_lin_alloc.c', 'lin_alloc.c'])
+  env.Test('test_basic_lin_alloc',
+      ['test_basic_lin_alloc.c', 'basic_lin_alloc.c'])
   env.SharedLibrary('cheesy_malloc.so',
-      ['malloc_linear.c', 'lin_alloc.c', 'safe_printf.c'])
+      ['malloc_linear.c', 'basic_lin_alloc.c', 'safe_printf.c'])
 
   with open("build.ninja", "w") as f:
     env.write_ninja(f)

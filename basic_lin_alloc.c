@@ -1,4 +1,4 @@
-#include "lin_alloc.h"
+#include "basic_lin_alloc.h"
 
 #include <string.h>
 
@@ -6,15 +6,15 @@ struct la_meta {
   uint64_t block_size;
 };
 
-void lin_alloc_init(lin_alloc_t *la, void *buf, size_t buflen)
+void basic_lin_alloc_init(basic_lin_alloc_t *la, void *buf, size_t buflen)
 {
-  *la = (struct lin_alloc){
+  *la = (struct basic_lin_alloc){
     .start = buf,
     .size = buflen,
   };
 }
 
-void *lin_alloc_aligned(lin_alloc_t *la, size_t size, size_t align)
+void *basic_lin_alloc_aligned(basic_lin_alloc_t *la, size_t size, size_t align)
 {
   struct la_meta meta;
   size_t avail;
@@ -47,7 +47,7 @@ void *lin_alloc_aligned(lin_alloc_t *la, size_t size, size_t align)
   return block_dst;
 }
 
-void *lin_alloc(lin_alloc_t *la, size_t size)
+void *basic_lin_alloc(basic_lin_alloc_t *la, size_t size)
 {
-  return lin_alloc_aligned(la, size, 8);
+  return basic_lin_alloc_aligned(la, size, 8);
 }

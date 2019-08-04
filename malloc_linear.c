@@ -1,4 +1,4 @@
-#include "lin_alloc.h"
+#include "basic_lin_alloc.h"
 #include "safe_printf.h"
 
 #include <pthread.h>
@@ -13,18 +13,18 @@ static pthread_mutex_t malloc_lock = PTHREAD_MUTEX_INITIALIZER;
 static uint8_t mem[16 * 1024 * 1024];
 
 static bool done_lin_init = false;
-static lin_alloc_t la;
+static basic_lin_alloc_t la;
 
 static void *alloc_internal(size_t size, size_t align)
 {
   pthread_mutex_lock(&malloc_lock);
 
   if (!done_lin_init) {
-    lin_alloc_init(&la, mem, sizeof(mem));
+    basic_lin_alloc_init(&la, mem, sizeof(mem));
     done_lin_init = true;
   }
 
-  void *out = lin_alloc_aligned(&la, size, align);
+  void *out = basic_lin_alloc_aligned(&la, size, align);
 
   pthread_mutex_unlock(&malloc_lock);
   return out;
@@ -78,7 +78,7 @@ int posix_memalign(void **out, size_t align, size_t size)
   return 0;
 }
 
-// TODO: implement proper realloc with a new fancier almost_lin_alloc.
+// TODO: implement proper realloc with a new fancier almost_basic_lin_alloc.
 void *realloc(void *ptr, size_t size)
 {
   void *out = NULL;

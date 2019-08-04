@@ -64,7 +64,10 @@ class BuildEnv:
     self.shared_libs = []
 
   def IsWindows(self):
-      return os.name == 'nt'
+    return os.name == 'nt'
+
+  def IsDarwin(self):
+    return platform.system() == 'Darwin'
 
   def src_helper(self, src):
     objects = []
@@ -83,7 +86,7 @@ class BuildEnv:
   def SharedLibrary(self, name, src):
     objects = self.src_helper(src)
     self.shared_libs.append((name, objects))
-  
+
   def Test(self, name, src):
     return self.Program("test/%s" % name, src + ["test.c"])
 
@@ -140,7 +143,8 @@ if __name__ == '__main__':
       ['test_better_lin_alloc.c', 'better_lin_alloc.c', 'safe_printf.c'])
   env.SharedLibrary('cheesy_malloc.so',
       ['cheesy_malloc.c', 'better_lin_alloc.c', 'safe_printf.c'])
-  env.Program('objc_test', ['objc_test.m'], frameworks=['Foundation'])
+  if env.IsDarwin():
+    env.Program('objc_test', ['objc_test.m'], frameworks=['Foundation'])
 
   with open("build.ninja", "w") as f:
     env.write_ninja(f)

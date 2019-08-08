@@ -50,16 +50,6 @@ static void *realloc_internal_align(void *orig, size_t size, size_t align)
   return out;
 }
 
-static size_t alloc_size_internal(const void *orig)
-{
-  pthread_mutex_lock(&malloc_lock);
-
-  size_t out = better_lin_size(&bla, orig);
-
-  pthread_mutex_unlock(&malloc_lock);
-  return out;
-}
-
 static void *realloc_internal(void *orig, size_t size)
 {
   return realloc_internal_align(orig, size, 16);
@@ -142,6 +132,16 @@ void *reallocf(void *ptr, size_t size)
 }
 
 #ifdef PLATFORM_DARWIN
+
+static size_t alloc_size_internal(const void *orig)
+{
+  pthread_mutex_lock(&malloc_lock);
+
+  size_t out = better_lin_size(&bla, orig);
+
+  pthread_mutex_unlock(&malloc_lock);
+  return out;
+}
 
 void *malloc_zone_malloc(malloc_zone_t *zone, size_t size)
 {

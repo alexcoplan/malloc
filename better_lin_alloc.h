@@ -12,6 +12,8 @@ void *better_lin_alloc(better_lin_alloc_t *bla, size_t size, size_t align);
 void *better_lin_realloc(better_lin_alloc_t *bla,
     void *orig, size_t size, size_t align);
 
+size_t better_lin_size(better_lin_alloc_t *bla, const void *ptr);
+
 struct better_lin_alloc {
   uint8_t *head;
   uint8_t *start;

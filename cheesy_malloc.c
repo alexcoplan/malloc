@@ -50,6 +50,16 @@ static void *realloc_internal_align(void *orig, size_t size, size_t align)
   return out;
 }
 
+static size_t alloc_size_internal(const void *orig)
+{
+  pthread_mutex_lock(&malloc_lock);
+
+  size_t out = better_lin_size(&bla, orig);
+
+  pthread_mutex_unlock(&malloc_lock);
+  return out;
+}
+
 static void *realloc_internal(void *orig, size_t size)
 {
   return realloc_internal_align(orig, size, 16);
@@ -183,6 +193,33 @@ malloc_zone_t *malloc_zone_from_ptr(const void *ptr)
 void malloc_zone_free(malloc_zone_t *zone, void *ptr)
 {
   safe_printf("malloc_zone_free(%p, %p)\n", zone, ptr);
+}
+
+size_t malloc_size(const void *ptr)
+{
+  size_t ret = alloc_size_internal(ptr);
+  safe_printf("malloc_size(%p) -> %zu\n", ptr, ret);
+  return ret;
+}
+
+void *reallocarray(void *ptr, size_t nmemb, size_t size)
+{
+  uint32_t *stupid = NULL;
+  *stupid = 0;
+  return ptr;
+}
+
+void *reallocarrayf(void *ptr, size_t nmemb, size_t size)
+{
+  uint32_t *stupid = NULL;
+  *stupid = 0;
+  return ptr;
+}
+
+void vfree(const void *addr)
+{
+  uint32_t *stupid = NULL;
+  *stupid = 0;
 }
 
 #endif

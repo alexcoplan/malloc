@@ -53,25 +53,32 @@ void *better_lin_alloc(better_lin_alloc_t *bla, size_t size, size_t align)
   return block_dst;
 }
 
+size_t better_lin_size(better_lin_alloc_t *bla, const void *ptr)
+{
+  struct bla_meta meta;
+  const uint8_t *p8 = ptr;
+
+  assert(bla->head);
+  assert(bla->start < p8 && p8 < bla->start + bla->size);
+  memcpy(&meta, p8 - sizeof(meta), sizeof(meta));
+  return meta.block_size;
+}
+
+
 void *better_lin_realloc(better_lin_alloc_t *bla,
     void *orig, size_t size, size_t align)
 {
-  struct bla_meta meta;
-  uint8_t *orig8 = orig;
-
   if (!orig) {
     return better_lin_alloc(bla, size, align);
   }
 
-  assert(bla->head);
-  assert(bla->start < orig8 && orig8 < bla->start + bla->size);
+  const size_t block_size = better_lin_size(bla, orig);
 
-  memcpy(&meta, orig8 - sizeof(meta), sizeof(meta));
-  if (size <= meta.block_size) {
+  if (size <= block_size) {
     return orig;
   }
 
   void *fresh = better_lin_alloc(bla, size, align);
-  memcpy(fresh, orig, meta.block_size);
+  memcpy(fresh, orig, block_size);
   return fresh;
 }
